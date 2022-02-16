@@ -2,120 +2,82 @@ package ru.yandex.scooter.tests;
 
 import io.qameta.allure.junit4.DisplayName;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import ru.yandex.scooter.api.client.ScooterApiClient;
+import ru.yandex.scooter.api.client.CourierApiClient;
 import ru.yandex.scooter.api.models.Courier;
-import ru.yandex.scooter.api.utils.ScooterGenerateData;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import ru.yandex.scooter.api.utils.ScooterGenerateCurierData;
+
+import static org.junit.Assert.assertTrue;
 
 public class CreateCourierTest {
 
-    private ScooterApiClient scooterApiClient;
-    private ScooterGenerateData scooterGenerateData;
+    private CourierApiClient courierApiClient;
+    private ScooterGenerateCurierData scooterGenerateCurierData;
     private int courierId;
+    private Courier courier;
 
     @Before
     public void setUp() {
-        scooterApiClient = new ScooterApiClient();
-        scooterGenerateData = new ScooterGenerateData();
+        courierApiClient = new CourierApiClient();
+        scooterGenerateCurierData = new ScooterGenerateCurierData();
+    }
+
+    @After
+    public void tearDown() {
+        courierId = scooterGenerateCurierData.loginCourier(courier);
+        boolean isCourierDeleted = scooterGenerateCurierData.deleteCourier(courierId);
+        assertTrue("Курьер не удален", isCourierDeleted);
     }
 
     @Test
     @DisplayName("Создание курьера")
-    public void createCourierValidCredentials(){
-        Courier courier = Courier.getRandom();
+    public void createCourierValidCredentials() {
+        courier = Courier.getRandom();
 
-        boolean courierCreated = scooterApiClient.createCourier(courier)
+        boolean courierCreated = courierApiClient.createCourier(courier)
                 .assertThat()
                 .statusCode(201)
                 .extract()
                 .path("ok");
 
-        assertTrue(courierCreated, "Курьер не создан");
-
-        courierId = scooterGenerateData.loginCourier(courier);
-        boolean isCourierDeleted = scooterGenerateData.deleteCourier(courierId);
-        assertTrue(isCourierDeleted, "Курьер не удален");
+        assertTrue("Курьер не создан", courierCreated);
     }
 
     @Test
     @DisplayName("Создание двух одинаковых курьеров")
-    public void createSecondIsSameCourierError(){
-        Courier courier = Courier.getRandom();
+    public void createSecondIsSameCourierError() {
+        courier = Courier.getRandom();
         String message = "Этот логин уже используется";
 
-        boolean courierCreated = scooterGenerateData.createCourier(courier);
-        assertTrue(courierCreated, "Первый курьер не создан");
+        boolean courierCreated = scooterGenerateCurierData.createCourier(courier);
 
-        courierId = scooterGenerateData.loginCourier(courier);
-
-        String secondCourierCreated = scooterApiClient.createCourier(courier)
+        String secondCourierCreated = courierApiClient.createCourier(courier)
                 .assertThat()
                 .statusCode(409)
                 .extract()
                 .path("message");
 
-        assertThat("Сообщение о создании второго такого же курьера некорректно", secondCourierCreated, containsString(message));
-
-        boolean isCourierDeleted = scooterGenerateData.deleteCourier(courierId);
-        assertTrue(isCourierDeleted, "Курьер не удален");
-    }
-
-    @Test
-    @DisplayName("Создание курьера с пустым логином и паролем")
-    public void createCourierWithoutCredentialsError(){
-        Courier courier = new Courier("","","Вася");
-        String message = "Недостаточно данных для создания учетной записи";
-
-        String courierWithoutCredentials = scooterApiClient.createCourier(courier)
-                .assertThat()
-                .statusCode(400)
-                .extract()
-                .path("message");
-
-        assertThat("Сообщение о создании второго такого же курьера некорректно", courierWithoutCredentials, containsString(message));
-    }
-
-    @Test
-    @DisplayName("Создание курьера без пароля")
-    public void createCourierWithoutPasswordError(){
-        Courier courier = new Courier(RandomStringUtils.randomAlphabetic(10),"",RandomStringUtils.randomAlphabetic(10));
-        String message = "Недостаточно данных для создания учетной записи";
-
-        String courierWithoutCredentials = scooterApiClient.createCourier(courier)
-                .assertThat()
-                .statusCode(400)
-                .extract()
-                .path("message");
-
-        assertThat("Сообщение о создании второго такого же курьера некорректно", courierWithoutCredentials, containsString(message));
-
+        assertTrue("Сообщение о создании второго такого же курьера некорректно", secondCourierCreated.contains(message));
     }
 
     @Test
     @DisplayName("Создание курьера с повторяющимся логином")
-    public void createSecondIsSameLoginError(){
-        Courier courier = Courier.getRandom();
-        Courier secondCourier = new Courier(courier.login,RandomStringUtils.randomAlphabetic(10),RandomStringUtils.randomAlphabetic(10));
+    public void createSecondIsSameLoginError() {
+        courier = Courier.getRandom();
+        Courier secondCourier = new Courier(courier.login, RandomStringUtils.randomAlphabetic(10), RandomStringUtils.randomAlphabetic(10));
         String message = "Этот логин уже используется";
 
-        boolean courierCreated = scooterGenerateData.createCourier(courier);
-        assertTrue(courierCreated, "Первый курьер не создан");
+        boolean courierCreated = scooterGenerateCurierData.createCourier(courier);
 
-        courierId = scooterGenerateData.loginCourier(courier);
-
-        String secondCourierCreated = scooterApiClient.createCourier(secondCourier)
+        String secondCourierCreated = courierApiClient.createCourier(secondCourier)
                 .assertThat()
                 .statusCode(409)
                 .extract()
                 .path("message");
 
-        assertThat("Сообщение о создании второго курьера некорректно", secondCourierCreated, containsString(message));
-
-        boolean isCourierDeleted = scooterGenerateData.deleteCourier(courierId);
-        assertTrue(isCourierDeleted, "Курьер не удален");
+        assertTrue("Первый курьер не создан", courierCreated);
+        assertTrue("Сообщение о создании второго курьера некорректно", secondCourierCreated.contains(message));
     }
 }
