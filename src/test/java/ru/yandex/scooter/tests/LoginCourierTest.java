@@ -1,77 +1,48 @@
 package ru.yandex.scooter.tests;
 
 import io.qameta.allure.junit4.DisplayName;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import ru.yandex.scooter.api.client.ScooterApiClient;
+import ru.yandex.scooter.api.client.CourierApiClient;
 import ru.yandex.scooter.api.models.Courier;
 import ru.yandex.scooter.api.models.CourierCredentials;
-import ru.yandex.scooter.api.utils.ScooterGenerateData;
+import ru.yandex.scooter.api.utils.ScooterGenerateCurierData;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.not;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotEquals;
 
 public class LoginCourierTest {
-    private ScooterApiClient scooterApiClient;
-    private ScooterGenerateData scooterGenerateData;
+    private CourierApiClient courierApiClient;
+    private ScooterGenerateCurierData scooterGenerateCurierData;
     private int courierId;
     private Courier courier;
 
     @Before
     public void setUp() {
-        scooterApiClient = new ScooterApiClient();
-        scooterGenerateData = new ScooterGenerateData();
+        courierApiClient = new CourierApiClient();
+        scooterGenerateCurierData = new ScooterGenerateCurierData();
         courier = Courier.getRandom();
 
-        boolean courierCreated = scooterGenerateData.createCourier(courier);
+        boolean courierCreated = scooterGenerateCurierData.createCourier(courier);
+        assertTrue("Курьер не создан", courierCreated);
+    }
 
-        assertTrue(courierCreated, "Курьер не создан");
+    @After
+    public void tearDown() {
+        boolean isCourierDeleted = scooterGenerateCurierData.deleteCourier(courierId);
+        assertTrue("Курьер не удален", isCourierDeleted);
     }
 
     @Test
     @DisplayName("Авторизация курьера")
-    public void loginCourierValid(){
-        courierId = scooterApiClient.loginCourier(CourierCredentials.getCredentials(courier))
+    public void loginCourierValid() {
+        courierId = courierApiClient.loginCourier(CourierCredentials.getCredentials(courier))
                 .assertThat()
                 .statusCode(200)
                 .extract()
                 .path("id");
 
-        assertThat("Id курьера некоректный", courierId, is(not(0)));
-
-        scooterApiClient.deleteCourier(courierId).assertThat().statusCode(200);
-    }
-
-    @Test
-    @DisplayName("Авторизация курьера с невалидными данными")
-    public void loginCourierInvalid(){
-        CourierCredentials courierCredentials = new CourierCredentials("invalidLogin","***");
-        String message = "Учетная запись не найдена";
-
-        String errorMessage = scooterApiClient.loginCourier(courierCredentials)
-                .assertThat()
-                .statusCode(404)
-                .extract()
-                .path("message");
-
-        assertThat("Сообщение об ошибке некорректно", errorMessage, containsString(message));
-    }
-
-    @Test
-    @DisplayName("Авторизация курьера с пустым логином")
-    public void loginCourierEmptyLogin(){
-        CourierCredentials courierCredentials = new CourierCredentials("","***");
-        String message = "Недостаточно данных для входа";
-
-        String errorMessage = scooterApiClient.loginCourier(courierCredentials)
-                .assertThat()
-                .statusCode(400)
-                .extract()
-                .path("message");
-
-        assertThat("Сообщение об ошибке некорректно", errorMessage, containsString(message));
+        assertNotEquals("Id курьера некоректный", 0, courierId);
     }
 }

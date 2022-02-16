@@ -3,79 +3,72 @@ package ru.yandex.scooter.tests;
 import io.qameta.allure.junit4.DisplayName;
 import org.junit.Before;
 import org.junit.Test;
-import ru.yandex.scooter.api.client.ScooterApiClient;
-import ru.yandex.scooter.api.models.Courier;
+import ru.yandex.scooter.api.client.OrdersApiClient;
 import ru.yandex.scooter.api.models.Order;
-
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 public class GetOrderByTrackTest {
 
-    private ScooterApiClient scooterApiClient;
-    private int courierId;
+    private OrdersApiClient ordersApiClient;
     private int track;
     private int idOrder;
     private Order order;
-    private Courier courier;
 
     @Before
     public void setUp() {
-        scooterApiClient = new ScooterApiClient();
+        ordersApiClient = new OrdersApiClient();
     }
 
     @Test
     @DisplayName("Получение заказа по его номеру")
-    public void GetOrderByTrackValid(){
+    public void getOrderByTrackValid() {
         order = Order.getRandom();
 
-        track = scooterApiClient.createOrders(order)
+        track = ordersApiClient.createOrders(order)
                 .assertThat()
                 .statusCode(201)
                 .extract()
                 .path("track");
-        assertThat("Track некоректный", track, is(not(0)));
 
-        idOrder = scooterApiClient.getOrdersByTrack(track)
+        idOrder = ordersApiClient.getOrdersByTrack(track)
                 .assertThat()
                 .statusCode(200)
                 .extract()
                 .path("order.id");
 
-        assertThat("Id заказа некоректный", idOrder, is(not(0)));
-
+        assertNotEquals("Track некоректный", 0, track);
+        assertNotEquals("Id заказа некоректный", 0, idOrder);
     }
 
     @Test
     @DisplayName("Получение заказа с несуществующим заказом")
-    public void GetOrderByTrackInvalid(){
+    public void getOrderByTrackInvalid() {
         track = 0;
         String message = "Заказ не найден";
 
-        String getOrderError = scooterApiClient.getOrdersByTrack(track)
+        String getOrderError = ordersApiClient.getOrdersByTrack(track)
                 .assertThat()
                 .statusCode(404)
                 .extract()
                 .path("message");
 
-        assertThat("Сообщение об ошибке некорректно", getOrderError, containsString(message));
+        assertTrue("Сообщение об ошибке некорректно", getOrderError.contains(message));
 
     }
 
     @Test
     @DisplayName("Получение заказа без номера заказа")
-    public void GetOrderWithoutTrack(){
+    public void getOrderWithoutTrack() {
         String message = "Недостаточно данных для поиска";
 
-        String getOrderError = scooterApiClient.getOrdersByTrack()
+        String getOrderError = ordersApiClient.getOrdersByTrack()
                 .assertThat()
                 .statusCode(400)
                 .extract()
                 .path("message");
 
-        assertThat("Сообщение об ошибке некорректно", getOrderError, containsString(message));
+        assertTrue("Сообщение об ошибке некорректно", getOrderError.contains(message));
 
     }
 }

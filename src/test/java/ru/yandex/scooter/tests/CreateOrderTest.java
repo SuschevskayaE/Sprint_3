@@ -5,26 +5,24 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import ru.yandex.scooter.api.client.ScooterApiClient;
+import ru.yandex.scooter.api.client.OrdersApiClient;
 import ru.yandex.scooter.api.models.Order;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertNotEquals;
 
 @RunWith(Parameterized.class)
 public class CreateOrderTest {
-    private ScooterApiClient scooterApiClient;
+    private OrdersApiClient ordersApiClient;
     private int track;
 
     private final String[] color;
 
-    public CreateOrderTest(String[] color){
+    public CreateOrderTest(String[] color) {
         this.color = color;
     }
 
     @Parameterized.Parameters
-    public static Object[][] getColorList(){
+    public static Object[][] getColorList() {
         return new Object[][]{
                 {new String[]{"BLACK"}},
                 {new String[]{"GREY"}},
@@ -36,22 +34,21 @@ public class CreateOrderTest {
 
     @Before
     public void setUp() {
-        scooterApiClient = new ScooterApiClient();
+        ordersApiClient = new OrdersApiClient();
     }
 
     @Test
     @DisplayName("Создание заказа")
-    public void createOrderWithColors(){
+    public void createOrderWithColors() {
         Order order = Order.getRandom();
         order.setColor(color);
 
-        track = scooterApiClient.createOrders(order)
+        track = ordersApiClient.createOrders(order)
                 .assertThat()
                 .statusCode(201)
                 .extract()
                 .path("track");
-
-        assertThat("Track некоректный", track, is(not(0)));
+        assertNotEquals("Track некоректный", 0, track);
     }
 
 }
