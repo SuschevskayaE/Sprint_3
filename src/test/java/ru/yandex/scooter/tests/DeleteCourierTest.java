@@ -1,12 +1,14 @@
 package ru.yandex.scooter.tests;
 
 import io.qameta.allure.junit4.DisplayName;
+import io.restassured.response.ValidatableResponse;
 import org.junit.Before;
 import org.junit.Test;
 import ru.yandex.scooter.api.client.CourierApiClient;
 import ru.yandex.scooter.api.constants.Endpoints;
 import ru.yandex.scooter.api.utils.ScooterGenerateCurierData;
 import static io.restassured.RestAssured.given;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class DeleteCourierTest {
@@ -35,7 +37,11 @@ public class DeleteCourierTest {
         courierId = 0;
         String message = "Курьера с таким id нет";
 
-        String courierDeleted = courierApiClient.deleteCourier(courierId).assertThat().statusCode(404).extract().path("message");
+        ValidatableResponse response = courierApiClient.deleteCourier(courierId);
+        int statusCode = response.extract().statusCode();
+        String courierDeleted = response.extract().path("message");
+
+        assertEquals("statusCode неверный", 404, statusCode);
         assertTrue("Сообщение о удалении курьера некорректно", courierDeleted.contains(message));
     }
 
@@ -43,16 +49,16 @@ public class DeleteCourierTest {
     @DisplayName("Удаление курьера без id")
     public void deleteCourierWithoutId() {
         String message = "Недостаточно данных для удаления курьера";
-        String courierDeleted = given()
+
+        ValidatableResponse response = given()
                 .header("Content-type", "application/json")
                 .when()
                 .delete(Endpoints.BASE_URL + Endpoints.COURIER_URL)
-                .then()
-                .assertThat()
-                .statusCode(404)
-                .extract()
-                .path("message");
+                .then();
+        int statusCode = response.extract().statusCode();
+        String courierDeleted = response.extract().path("message");
 
+        assertEquals("statusCode неверный", 404, statusCode);
         assertTrue("Сообщение о недостаточности данных некорректно", courierDeleted.contains(message));
     }
 }

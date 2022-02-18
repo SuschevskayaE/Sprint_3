@@ -8,6 +8,7 @@ import ru.yandex.scooter.api.client.OrdersApiClient;
 import ru.yandex.scooter.api.models.OrderResponse;
 import ru.yandex.scooter.api.models.Orders;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class GettingListOfOrdersTest {
@@ -25,8 +26,10 @@ public class GettingListOfOrdersTest {
     public void getListOfOrdersWithoutParams() {
 
         response = ordersApiClient.getListOfOrders();
-        response.then().assertThat().statusCode(200);
+        int statusCode = response.then().extract().statusCode();
         OrderResponse[] orderResponse = response.body().as(Orders.class).getOrders();
+
+        assertEquals("statusCode неверный", 200, statusCode);
         assertTrue("Нет заказов", orderResponse.length > 0);
     }
 }

@@ -1,12 +1,13 @@
 package ru.yandex.scooter.tests;
 
 import io.qameta.allure.junit4.DisplayName;
+import io.restassured.response.ValidatableResponse;
 import org.junit.Before;
 import org.junit.Test;
 import ru.yandex.scooter.api.client.OrdersApiClient;
 import ru.yandex.scooter.api.models.Order;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+
+import static org.junit.Assert.*;
 
 public class GetOrderByTrackTest {
 
@@ -25,18 +26,16 @@ public class GetOrderByTrackTest {
     public void getOrderByTrackValid() {
         order = Order.getRandom();
 
-        track = ordersApiClient.createOrders(order)
-                .assertThat()
-                .statusCode(201)
-                .extract()
-                .path("track");
+        ValidatableResponse response = ordersApiClient.createOrders(order);
+        int statusCode = response.extract().statusCode();
+        track = response.extract().path("track");
 
-        idOrder = ordersApiClient.getOrdersByTrack(track)
-                .assertThat()
-                .statusCode(200)
-                .extract()
-                .path("order.id");
+        ValidatableResponse responseOrder = ordersApiClient.getOrdersByTrack(track);
+        int statusCodeOrder = responseOrder.extract().statusCode();
+        idOrder = responseOrder.extract().path("order.id");
 
+        assertEquals("statusCode неверный", 201, statusCode);
+        assertEquals("statusCode неверный", 200, statusCodeOrder);
         assertNotEquals("Track некоректный", 0, track);
         assertNotEquals("Id заказа некоректный", 0, idOrder);
     }
@@ -47,12 +46,11 @@ public class GetOrderByTrackTest {
         track = 0;
         String message = "Заказ не найден";
 
-        String getOrderError = ordersApiClient.getOrdersByTrack(track)
-                .assertThat()
-                .statusCode(404)
-                .extract()
-                .path("message");
+        ValidatableResponse response = ordersApiClient.getOrdersByTrack(track);
+        int statusCode = response.extract().statusCode();
+        String getOrderError = response.extract().path("message");
 
+        assertEquals("statusCode неверный", 404, statusCode);
         assertTrue("Сообщение об ошибке некорректно", getOrderError.contains(message));
 
     }
@@ -62,12 +60,11 @@ public class GetOrderByTrackTest {
     public void getOrderWithoutTrack() {
         String message = "Недостаточно данных для поиска";
 
-        String getOrderError = ordersApiClient.getOrdersByTrack()
-                .assertThat()
-                .statusCode(400)
-                .extract()
-                .path("message");
+        ValidatableResponse response = ordersApiClient.getOrdersByTrack();
+        int statusCode = response.extract().statusCode();
+        String getOrderError = response.extract().path("message");
 
+        assertEquals("statusCode неверный", 400, statusCode);
         assertTrue("Сообщение об ошибке некорректно", getOrderError.contains(message));
 
     }

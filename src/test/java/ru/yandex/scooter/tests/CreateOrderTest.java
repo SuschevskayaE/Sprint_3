@@ -1,6 +1,7 @@
 package ru.yandex.scooter.tests;
 
 import io.qameta.allure.junit4.DisplayName;
+import io.restassured.response.ValidatableResponse;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -8,6 +9,7 @@ import org.junit.runners.Parameterized;
 import ru.yandex.scooter.api.client.OrdersApiClient;
 import ru.yandex.scooter.api.models.Order;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
 @RunWith(Parameterized.class)
@@ -43,11 +45,11 @@ public class CreateOrderTest {
         Order order = Order.getRandom();
         order.setColor(color);
 
-        track = ordersApiClient.createOrders(order)
-                .assertThat()
-                .statusCode(201)
-                .extract()
-                .path("track");
+        ValidatableResponse response = ordersApiClient.createOrders(order);
+        int statusCode = response.extract().statusCode();
+        track = response.extract().path("track");
+
+        assertEquals("statusCode неверный", 201, statusCode);
         assertNotEquals("Track некоректный", 0, track);
     }
 

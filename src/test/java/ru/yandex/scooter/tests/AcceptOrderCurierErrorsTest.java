@@ -1,6 +1,7 @@
 package ru.yandex.scooter.tests;
 
 import io.qameta.allure.junit4.DisplayName;
+import io.restassured.response.ValidatableResponse;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -9,6 +10,7 @@ import ru.yandex.scooter.api.constants.Endpoints;
 import ru.yandex.scooter.api.utils.ScooterGenerateCurierData;
 
 import static io.restassured.RestAssured.given;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class AcceptOrderCurierErrorsTest {
@@ -36,12 +38,11 @@ public class AcceptOrderCurierErrorsTest {
         idOrder = 0;
         String message = "Заказа с таким id не существует";
 
-        String acceptOrderError = ordersApiClient.acceptOrders(idOrder, courierId)
-                .assertThat()
-                .statusCode(404)
-                .extract()
-                .path("message");
+        ValidatableResponse response = ordersApiClient.acceptOrders(idOrder, courierId);
+        int statusCode = response.extract().statusCode();
+        String acceptOrderError = response.extract().path("message");
 
+        assertEquals("statusCode неверный", 404, statusCode);
         assertTrue("Сообщение об ошибке некорректно", acceptOrderError.contains(message));
     }
 
@@ -50,17 +51,18 @@ public class AcceptOrderCurierErrorsTest {
     public void acceptOrderWithoutIdOrder() {
         String message = "Недостаточно данных для поиска";
 
-        String acceptOrderError = given()
+        ValidatableResponse response = given()
                 .header("Content-type", "application/json")
                 .when()
                 .queryParam("courierId", courierId)
                 .put(Endpoints.BASE_URL + Endpoints.ORDERS_URL + "/accept/")
-                .then()
-                .assertThat()
-                .statusCode(400)
-                .extract()
-                .path("message");
+                .then();
 
+        int statusCode = response.extract().statusCode();
+
+        String acceptOrderError = response.extract().path("message");
+
+        assertEquals("statusCode неверный", 400, statusCode);
         assertTrue("Сообщение об ошибке некорректно", acceptOrderError.contains(message));
     }
 }

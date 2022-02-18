@@ -1,6 +1,7 @@
 package ru.yandex.scooter.tests;
 
 import io.qameta.allure.junit4.DisplayName;
+import io.restassured.response.ValidatableResponse;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -10,6 +11,7 @@ import ru.yandex.scooter.api.models.Courier;
 import ru.yandex.scooter.api.utils.ScooterGenerateCurierData;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 public class CreateCourierTest {
 
@@ -36,12 +38,12 @@ public class CreateCourierTest {
     public void createCourierValidCredentials() {
         courier = Courier.getRandom();
 
-        boolean courierCreated = courierApiClient.createCourier(courier)
-                .assertThat()
-                .statusCode(201)
-                .extract()
-                .path("ok");
+        ValidatableResponse response = courierApiClient.createCourier(courier);
 
+        int statusCode = response.extract().statusCode();
+        boolean courierCreated = response.extract().path("ok");
+
+        assertEquals("statusCode неверный", 201, statusCode);
         assertTrue("Курьер не создан", courierCreated);
     }
 
@@ -53,12 +55,12 @@ public class CreateCourierTest {
 
         boolean courierCreated = scooterGenerateCurierData.createCourier(courier);
 
-        String secondCourierCreated = courierApiClient.createCourier(courier)
-                .assertThat()
-                .statusCode(409)
-                .extract()
-                .path("message");
+        ValidatableResponse response = courierApiClient.createCourier(courier);
 
+        int statusCode = response.extract().statusCode();
+        String secondCourierCreated = response.extract().path("message");
+
+        assertEquals("statusCode неверный", 409, statusCode);
         assertTrue("Сообщение о создании второго такого же курьера некорректно", secondCourierCreated.contains(message));
     }
 
@@ -71,13 +73,13 @@ public class CreateCourierTest {
 
         boolean courierCreated = scooterGenerateCurierData.createCourier(courier);
 
-        String secondCourierCreated = courierApiClient.createCourier(secondCourier)
-                .assertThat()
-                .statusCode(409)
-                .extract()
-                .path("message");
+        ValidatableResponse response = courierApiClient.createCourier(secondCourier);
+        int statusCode = response.extract().statusCode();
+
+        String secondCourierCreated = response.extract().path("message");
 
         assertTrue("Первый курьер не создан", courierCreated);
+        assertEquals("statusCode неверный", 409, statusCode);
         assertTrue("Сообщение о создании второго курьера некорректно", secondCourierCreated.contains(message));
     }
 }

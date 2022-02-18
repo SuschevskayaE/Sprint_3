@@ -1,6 +1,7 @@
 package ru.yandex.scooter.tests;
 
 import io.qameta.allure.junit4.DisplayName;
+import io.restassured.response.ValidatableResponse;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -8,6 +9,7 @@ import ru.yandex.scooter.api.client.OrdersApiClient;
 import ru.yandex.scooter.api.utils.ScooterGenerateCurierData;
 import ru.yandex.scooter.api.utils.ScooterGenerateOrderData;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class AcceptOrderTest {
@@ -39,12 +41,12 @@ public class AcceptOrderTest {
     @Test
     @DisplayName("Принять заказ")
     public void acceptOrderValid() {
-        boolean isAcceptOrder = ordersApiClient.acceptOrders(idOrder, courierId)
-                .assertThat()
-                .statusCode(200)
-                .extract()
-                .path("ok");
 
+        ValidatableResponse response = ordersApiClient.acceptOrders(idOrder, courierId);
+        int statusCode = response.extract().statusCode();
+        boolean isAcceptOrder = response.extract().path("ok");
+
+        assertEquals("statusCode неверный", 200, statusCode);
         assertTrue("Заказ не принят", isAcceptOrder);
     }
 }

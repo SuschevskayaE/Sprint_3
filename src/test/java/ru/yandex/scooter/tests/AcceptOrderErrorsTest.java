@@ -1,11 +1,13 @@
 package ru.yandex.scooter.tests;
 
 import io.qameta.allure.junit4.DisplayName;
+import io.restassured.response.ValidatableResponse;
 import org.junit.Before;
 import org.junit.Test;
 import ru.yandex.scooter.api.client.OrdersApiClient;
 import ru.yandex.scooter.api.utils.ScooterGenerateOrderData;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class AcceptOrderErrorsTest {
@@ -27,11 +29,11 @@ public class AcceptOrderErrorsTest {
     public void acceptOrderWithoutIdCourier() {
         String message = "Недостаточно данных для поиска";
 
-        String acceptOrderError = ordersApiClient.acceptOrders(idOrder)
-                .assertThat()
-                .statusCode(400)
-                .extract()
-                .path("message");
+        ValidatableResponse response = ordersApiClient.acceptOrders(idOrder);
+        int statusCode = response.extract().statusCode();
+        String acceptOrderError = response.extract().path("message");
+
+        assertEquals("statusCode неверный", 400, statusCode);
         assertTrue("Сообщение об ошибке некорректно", acceptOrderError.contains(message));
     }
 
@@ -41,11 +43,11 @@ public class AcceptOrderErrorsTest {
         String message = "Курьера с таким id не существует";
         courierId = 0;
 
-        String acceptOrderError = ordersApiClient.acceptOrders(idOrder, courierId)
-                .assertThat()
-                .statusCode(404)
-                .extract()
-                .path("message");
+        ValidatableResponse response = ordersApiClient.acceptOrders(idOrder, courierId);
+        int statusCode = response.extract().statusCode();
+        String acceptOrderError = response.extract().path("message");
+
+        assertEquals("statusCode неверный", 404, statusCode);
         assertTrue("Сообщение об ошибке некорректно", acceptOrderError.contains(message));
     }
 }
